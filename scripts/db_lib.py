@@ -18,14 +18,14 @@ def connect(params_dic):
     return conn
 
 
-# Удаляем все записи в таблице
+# clear the table
 def truncate_table(conn, tbl_name):
     with conn.cursor() as cur:
         cur.execute("truncate table {} ;".format(tbl_name))
     conn.commit()
 
 
-# запись датафрейма в таблицу
+# write dataframe to table
 def insert2Table(conn, df, table_name, check_columns):
     list_columns_name = list(df.columns)
     query = sql.SQL("INSERT INTO {} ({}) VALUES ({}) ON CONFLICT ({}) DO NOTHING").format(
@@ -63,7 +63,7 @@ def insert2Table_batch(conn,df,table_name,check_columns):
         extras.execute_values(cursor, insert_command,( (rec) for rec in records) )
 
 
-# Функция возврашает список имен полей в таблице
+# The function returns a list of field names in the table
 
 
 def get_columns_names(conn, table_name):
@@ -76,7 +76,7 @@ def get_columns_names(conn, table_name):
         column_names = [desc[0] for desc in cur.description]
     return column_names
 
-# Функция возврашает список имен полей в таблице
+# The function returns a list of field names in the table
 def get_tbl_columns_name_and_size(conn, table_name):
     conn.autocommit = True
     with conn.cursor() as cur:
@@ -86,7 +86,7 @@ def get_tbl_columns_name_and_size(conn, table_name):
         column_names = [row for row in cur]
     return column_names
 
-# Функция возврашает список имен полей в таблице только одного типа. (параметр fldtype)
+# The function returns a list of field names in a table of only one type. (fldtype parameter)
 
 
 def get_tbl_columns_names_only_type(conn, table_name, fldtype):
@@ -99,7 +99,7 @@ def get_tbl_columns_names_only_type(conn, table_name, fldtype):
     return column_names
 
 
-# выбираем столбцы первого списка, которых нет во втором
+# select the columns of the first list that are not in the second
 def get_list_columns4drop(df_cols, tbl_cols):
     drop_list = []
     for name in df_cols:
@@ -107,7 +107,7 @@ def get_list_columns4drop(df_cols, tbl_cols):
             drop_list.append(name)
     return drop_list
 
-# выбираем столбцы первого списка (фрейм), которые есть во втором (таблица бд)
+# select the columns of the first list (frame) that are in the second (database table)
 def get_list_columns4type(df_cols, tbl_cols):
     find_list = []
     for name in df_cols:

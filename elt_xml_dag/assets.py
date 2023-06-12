@@ -13,7 +13,7 @@ import os
 
 
 
-# Параметры соединения с базой данных
+# Database connection parameters
 param_dic = {
     "host"      : "192.168.1.50",
     "dbname"    : "gsmk",
@@ -21,7 +21,7 @@ param_dic = {
     "password"  : "postgres"
 }
 
-# задаем каталог источника и архива данных (xml)
+# set the source and archive directory (xml)
 workdir = 'IN'
 outdir = 'OUT'
 
@@ -32,11 +32,11 @@ main_param['src_data'] = {}
 
 @asset(group_name="LoadXML")
 def source_data_parameters() -> Dict:
-    # задаем словарь массив файлов источников и их параметры
+    # set the dictionary array of source files and their parameters
     src_data={}
 
 
-    # параметры для данных из файла onk_cases.xml
+    # parameters for data from the 1st.xml file
 
     src_files=['onk_cases.xml']
     xml_findkey = 'SL'
@@ -44,7 +44,7 @@ def source_data_parameters() -> Dict:
     db_tables_keys =  ['id_case','id_case','id_service_onk','id_service_onk']
     src_data['onk_cases.xml']=[xml_findkey, xml_db_tables, db_tables_keys]
 
-    # параметры для данных из файла onk_ds_cases.xml
+    # parameters for data from the 2nd.xml file
 
     src_files.append('onk_ds_cases.xml')
     xml_findkey = 'case_ds_onk'
@@ -52,7 +52,7 @@ def source_data_parameters() -> Dict:
     db_tables_keys =  ['id_case']
     src_data['onk_ds_cases.xml']=[xml_findkey, xml_db_tables, db_tables_keys]
 
-    # параметры для данных из файла casedirs.xml
+    # parameters for data from the 3.xml file
 
     src_files.append('casedirs.xml')
     xml_findkey = 'case_direction'
@@ -60,7 +60,7 @@ def source_data_parameters() -> Dict:
     db_tables_keys =  ['id_case_direction']
     src_data['casedirs.xml']=[xml_findkey, xml_db_tables, db_tables_keys]
 
-    # параметры для данных из файла caseadd.xml
+    # parameters for data from the 4.xml file
 
     src_files.append('caseadd.xml')
     xml_findkey = 'case_add'
@@ -68,7 +68,7 @@ def source_data_parameters() -> Dict:
     db_tables_keys =  ['id_case_add']
     src_data['caseadd.xml']=[xml_findkey, xml_db_tables, db_tables_keys]
 
-    # параметры для данных из файла visits.xml
+    # parameters for data from the 5 .xml file
 
     src_files.append('visits.xml')
     xml_findkey = 'visit'
@@ -76,7 +76,7 @@ def source_data_parameters() -> Dict:
     db_tables_keys =  ['id_visit']
     src_data['visits.xml']=[xml_findkey, xml_db_tables, db_tables_keys]
 
-    # параметры для данных из файла cards.xml
+    # parameters for data from the 6 .xml file
 
     src_files.append('cards.xml')
     xml_findkey = 'infis_card'
@@ -91,7 +91,7 @@ def source_data_parameters() -> Dict:
 # extract data from xml
 @asset(group_name="LoadXML")
 def extract_from_xml_file(source_data_parameters)-> Dict:
-    # Соединяемся с базой данных
+    # Connect to the database
     conn = db_lib.connect(param_dic)
     conn.set_client_encoding('UTF8')
 
@@ -99,12 +99,12 @@ def extract_from_xml_file(source_data_parameters)-> Dict:
 
     src_files = main_param['src_files']
     src_data = main_param['src_data']
-    #main_param = {}
+
     main_param['connection'] = conn
 
-    """ проходим по каждому источику *(файлу xml),
-        формируем список таблиц загрузки и ключей уникальности
-        вызываем процедуру загрузки для каждой таблицы
+    """ go through each source *(xml file),
+         we form a list of loading tables and uniqueness keys
+         call the load procedure for each table
     """
 
     for file in src_files:
@@ -116,17 +116,17 @@ def extract_from_xml_file(source_data_parameters)-> Dict:
 
         for db_table in src_data[file][1]:
             ind = src_data[file][1].index(db_table)
-            print(f"файл  {file} --- таблица {db_table} ---")
+            print(f"file {file} --- table {db_table} ---")
 
-            # Формируем список колонок таблицы бд
+            # form a list of columns of the database table
             tbl_cols = db_lib.get_columns_names(conn, db_table)
-            # Формируем словарь размеров полей таблицы бд (для выравнивания, в xml размер завышен)
+            # form a dictionary of the size of the fields of the database table (for alignment, the size is too high in xml)
             tbl_cols_name_size = db_lib.get_tbl_columns_name_and_size(conn, db_table)
             fldsizes={}
             for name, size in tbl_cols_name_size:
                 fldsizes[name]=size
 
-            # Формируем список колонок таблицы бд типов integer, numeric, smallint, date
+            # Form a list of columns of the database table of types integer, numeric, smallint, date
 
             fldtypes = {}
             fldtypes['integer'] = db_lib.get_tbl_columns_names_only_type(conn, db_table, "integer")
@@ -137,7 +137,7 @@ def extract_from_xml_file(source_data_parameters)-> Dict:
             fldtypes['string'] = db_lib.get_tbl_columns_names_only_type(conn, db_table, "character varying")
 
 
-            # Формируем словарь основных параметров вызова процедур
+            # form a dictionary of basic parameters for calling procedures
 
             main_param['table'] = db_table
             main_param['table_columns'] = tbl_cols
@@ -148,15 +148,15 @@ def extract_from_xml_file(source_data_parameters)-> Dict:
             main_param['unique_key'] = src_data[file][2][ind]
             main_param['column_sizes'] = fldsizes
 
-            # Удаляем записи в таблице
+            # Delete entries in the table
             db_lib.truncate_table(main_param['connection'], main_param['table'])
 
-            ### Запуск основной процедуры загрузки даных
+            # Starting the main data loading procedure
 
             start_time = datetime.now()
-            print(f"Время старта --- {datetime.now()} ---")
+            print(f"Start time --- {datetime.now()} ---")
             xml_lib.main_process_xml(main_param=main_param)
-            print(f"Время завершения --- {datetime.now()} ---")
+            print(f"End time --- {datetime.now()} ---")
             print("--- %s seconds ---" % (datetime.now() - start_time))
 
 

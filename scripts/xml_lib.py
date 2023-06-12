@@ -5,7 +5,7 @@ from . import db_lib
 import datetime
 import re
 
-# Функции преобразования типов
+# Type conversion functions
 
 
 def format_dates(df, columns):
@@ -58,8 +58,8 @@ def format_str(df, fldsizes, columns):
 
 
 
-# Функция возвращает генератор полей записи в наборе xml
-# Выбираем только те поля, которые есть в списке, передаваемом параметром tbl_cols
+# The function returns the record field generator in the xml set
+# Select only those fields that are in the list passed by the tbl_cols parameter
 
 def add_elem2dict(fld, tbl_cols, r_dict):
     if fld.tag.lower() in tbl_cols:
@@ -83,13 +83,13 @@ def change_elem2dict(fld, tbl_cols, r_dict):
 def prepare_df(part_dict, main_param):
     df = pd.DataFrame.from_dict(part_dict)
 
-# удаляем пустые колонки
+# remove empty columns
     df = df.dropna(axis=1, how='all')
 
-# Формируем список колонок фрейма
+# Form a list of frame columns
     df_cols = list(df.columns)
 
-    # Формируем список колонок фрейма типов integer, numeric, smallint, date
+    # orm a list of columns of the frame of types integer, numeric, smallint, date
     columns4int = db_lib.get_list_columns4type(df_cols, main_param['tbl_fldtypes']['integer'])
     columns4num = db_lib.get_list_columns4type(df_cols, main_param['tbl_fldtypes']['numeric'])
     columns4s_int = db_lib.get_list_columns4type(df_cols, main_param['tbl_fldtypes']['smallint'])
@@ -97,7 +97,7 @@ def prepare_df(part_dict, main_param):
     columns4float = db_lib.get_list_columns4type(df_cols, main_param['tbl_fldtypes']['float'])
     columns4str = db_lib.get_list_columns4type(df_cols, main_param['tbl_fldtypes']['string'])
 
-    # Формируем типы в df
+    # Forming types in df
     format_dates(df, columns4date)
     # format="%d/%m/%Y"
 
@@ -113,8 +113,6 @@ def prepare_df(part_dict, main_param):
 
 
 def main_process_xml(main_param):
-    # root = ET.parse(main_param['xml_file']).getroot()
-    # main_node = root.iterfind(main_param['xml_findkey'])
 
     part_dict = {}
     rec_count = main_param['max_records']
@@ -127,7 +125,7 @@ def main_process_xml(main_param):
         if elem.tag == main_param['xml_findkey'] and part_dict:
             rec_count -= 1
             if rec_count == 0:
-                # Формирование и подготовка df для записи базы данных
+                # Forming and preparing df for database writing
                 df = prepare_df(part_dict, main_param)
                 df_count+=len(df)
                 #db_lib.insert2Table(main_param['connection'], df, main_param['table'], main_param['unique_key'])
